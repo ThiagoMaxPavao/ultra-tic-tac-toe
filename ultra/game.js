@@ -267,7 +267,7 @@ var maxlayer
 var turn
 
 function setup() {
-    createCanvas(1200, 600)
+    createCanvas(650, 600)
 
     maxlayer = 0
     tab = Board.create()
@@ -294,7 +294,7 @@ function updateBoardSize(increment) {
 }
 
 function mousePressed() {
-    if(mouseX > width/2) {
+    if(mouseX > 600) {
         if(mouseButton == LEFT)
             updateBoardSize(1)
         else
