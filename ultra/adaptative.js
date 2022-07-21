@@ -2,7 +2,6 @@ var objeto
 var objAR
 
 window.addEventListener('load', () => {
-    console.log(1)
     objeto = document.querySelector("canvas")
     objAR = objeto.width/objeto.height
     setSize()
