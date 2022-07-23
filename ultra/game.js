@@ -18,51 +18,68 @@ class Board {
     }
 
     static create() {
-        return new Board(0,0 , 600, 0, undefined, undefined)
+        return new Board(0,0 , height, 0, undefined, undefined)
     }
 
     get type() {
         return 'B'
     }
 
-    drawRectriction() {
-        strokeWeight(0)
-        fill(255,255,255,100)
+    drawHover() {
+        let hoverPos = this.positionDiscover(mouseX, mouseY)
+        if(hoverPos == -1 || (this.restrict != -1 && hoverPos != this.restrict)) return
+        if(this.t[hoverPos].type == 'B') {
+            this.t[hoverPos].drawHover(mouseX, mouseY)
+            return
+        }
+        if(this.t[hoverPos].type != 'V') return
 
         let w = this.size/60
         let margin = 2*w
         let d = (this.size-2*margin)/3
         let br = 2.5*w
 
-        let pos
-        for(let x = 0; x < 3; x++)
-        for(let y = 0; y < 3; y++) {
-            pos = 3*y+x
-            if(this.restrict != -1 && this.restrict != pos) continue // dont draw restricted cell
-            if(this.t[pos].type != 'V') {
-                if(this.t[pos].type == 'B')
-                    this.t[pos].drawRectriction()
-                continue
-            }
+        let hX = hoverPos%3
+        let hY = Math.floor(hoverPos/3)
+        
+        let cellX = this.x+margin + d*hX
+        let cellY = this.y+margin + d*hY
 
-            let cellX = this.x+margin + d*x
-            let cellY = this.y+margin + d*y
-            
-            if(pos == 0)
-                rect(cellX, cellY, d, d, br,0,0,0)
-            else if(pos == 2)
-                rect(cellX, cellY, d, d, 0,br,0,0)
-            else if(pos == 6)
-                rect(cellX, cellY, d, d, 0,0,0,br)
-            else if(pos == 8)
-                rect(cellX, cellY, d, d, 0,0,br,0)
-            else
-                rect(cellX, cellY, d, d)
-        }
+        let innerSize = (this.size-2*margin-2*w)/3
+
+        let pX = this.x+margin + (innerSize+w)*hX
+        let pY = this.y+margin + (innerSize+w)*hY
+
+        let p
+        if (turn == 'X')
+            p = new X_Piece(pX, pY, innerSize)
+        else if (turn == 'O')
+            p = new O_Piece(pX, pY, innerSize)
+        
+        p.draw()
+        
+        strokeWeight(0)
+        fill(255,255,255,75)
+        
+        if(hoverPos == 0)
+            rect(cellX, cellY, d, d, br,0,0,0)
+        else if(hoverPos == 2)
+            rect(cellX, cellY, d, d, 0,br,0,0)
+        else if(hoverPos == 6)
+            rect(cellX, cellY, d, d, 0,0,0,br)
+        else if(hoverPos == 8)
+            rect(cellX, cellY, d, d, 0,0,br,0)
+        else
+            rect(cellX, cellY, d, d)
     }
 
-    draw() {
-        stroke(255)
+    draw(restrictOverride) {
+        if(this.layer == 0)
+            stroke(212,175,55)
+        else if(restrictOverride || !this.hasPlay())
+            stroke(100)
+        else
+            stroke(255)
         let w = this.size/60
         strokeWeight(w)
 
@@ -75,11 +92,15 @@ class Board {
 
         for(let x = 0; x < 3; x++)
         for(let y = 0; y < 3; y++) {
-            if(this.t[3*y+x].type != 'V')
-                this.t[3*y+x].draw()
-        }
+            let type = this.t[3*y+x].type
 
-        
+            let restrictOverrideChild = false
+            if(restrictOverride || (this.restrict != -1 && this.restrict != 3*y+x))
+                restrictOverrideChild=true
+
+            if(type != 'V')
+                this.t[3*y+x].draw(restrictOverrideChild)
+        }
     }
 
     createInnerBoards() {
@@ -151,8 +172,10 @@ class Board {
 
         let c = this.check()
         if(c != -1) { // board is completed
-            if(this.layer == 0) // case main board is completed, game over
-                console.log("game over, winner:" + c)
+            if(this.layer == 0) { // case main board is completed, game over
+                this.setWinPieces(c)
+                gameOver(c)
+            }
             else
                 this.parent.addPiece(c, this.pos%3, Math.floor(this.pos/3))
         }
@@ -181,7 +204,7 @@ class Board {
                 this.t[i].removeRestrict()
     }
 
-    processMousePress(mX, mY) {
+    positionDiscover(mX, mY) {
         let pos = -1
         let x, y
 
@@ -197,10 +220,17 @@ class Board {
             if(mX >= cellX && mX <= cellX+innerSize && mY >= cellY && mY <= cellY+innerSize)
                 pos = 3*y+x
         }
-        x -= 1
-        y -= 1 // adjust x and y, for still increments when its over
+        
+        return pos
+    }
 
+    processMousePress(mX, mY) {
+        let pos = this.positionDiscover(mX, mY)
         if(pos == -1) return // not inside a cell
+
+        let x = pos%3
+        let y = Math.floor(pos/3)
+
         if(this.restrict != -1 && this.restrict != pos) return // invalid position to play
 
         if(this.t[pos].type == 'V') {
@@ -220,6 +250,47 @@ class Board {
         }
         return false
     }
+
+    setWinPieces(p) {
+        let pos
+        for(let x = 0; x < 3; x++)
+        for(let y = 0; y < 3; y++) { // checkVertical
+            pos = 3*y+x
+            if(this.t[pos].type != p)
+                break
+            if(y == 2) {
+                for(let y2 = 0; y2 < 3; y2++)
+                    this.t[3*y2+x].winPiece = true
+            }
+        }
+
+        for(let y = 0; y < 3; y++)
+        for(let x = 0; x < 3; x++) { // checkHorizontal
+            pos = 3*y+x
+            if(this.t[pos].type != p)
+                break
+            if(x == 2) {
+                for(let x2 = 0; x2 < 3; x2++)
+                    this.t[3*y+x2].winPiece = true
+            }
+        }
+
+        // checkDiagonals
+        if(this.t[4].type == p) {// center
+            if(this.t[0].type == p && this.t[8].type == p) {
+                this.t[0].winPiece = true
+                this.t[4].winPiece = true
+                this.t[8].winPiece = true
+            }
+            if(this.t[2].type == p && this.t[6].type == p) {
+                this.t[2].winPiece = true
+                this.t[4].winPiece = true
+                this.t[6].winPiece = true
+            }
+        }
+
+        return false
+    }
 }
 
 class Piece {
@@ -227,15 +298,39 @@ class Piece {
         this.x = x
         this.y = y
         this.size = size
+        this.winPiece = false
     }
 }
 
 class X_Piece extends Piece {
+    constructor(x,y, size) {
+        super(x,y, size)
+        this.w = this.size/10
+        let margin = 2*this.w
+        this.x1 = this.x + margin
+        this.y1 = this.y + margin
+        this.x2 = this.x + this.size - margin
+        this.y2 = this.y + this.size - margin
+    }
+
     draw() {
-        stroke(255,0,0)
-        strokeWeight(1)
-        fill(255,0,0)
-        rect(this.x, this.y, this.size)
+        let c = color(255,0,0)
+        stroke(c)
+        fill(c)
+        strokeWeight(this.w)
+        if(this.winPiece) {
+            drawingContext.shadowBlur = 70;
+            drawingContext.shadowColor = color(255,0,0);
+            line(this.x1,this.y1, this.x2,this.y2)
+            line(this.x1,this.y2, this.x2,this.y1)
+        }
+
+        line(this.x1,this.y1, this.x2,this.y2)
+        line(this.x1,this.y2, this.x2,this.y1)
+        if(this.size < 7)
+            rect(this.x+this.w, this.y+this.w, this.size-2*this.w)
+
+        drawingContext.shadowBlur = 0;
     }
 
     get type() {
@@ -244,11 +339,32 @@ class X_Piece extends Piece {
 }
 
 class O_Piece extends Piece {
+    constructor(x,y, size) {
+        super(x,y, size)
+        this.w = this.size/10
+        this.d = this.size - 4*this.w
+        this.xC = this.x + this.size/2
+        this.yC = this.y + this.size/2
+    }
+
     draw() {
         stroke(0,0,255)
-        strokeWeight(1)
-        fill(0,0,255)
-        rect(this.x, this.y, this.size)
+        noFill()
+        strokeWeight(this.w)
+        if(this.winPiece) {
+            drawingContext.shadowBlur = 70;
+            drawingContext.shadowColor = color(0,0,255);
+            circle(this.xC, this.yC, this.d)
+        }
+
+        circle(this.xC, this.yC, this.d)
+        
+        if(this.size < 7) {
+            fill(0,0,255)
+            rect(this.x+this.w, this.y+this.w, this.size-2*this.w)
+        }
+
+        drawingContext.shadowBlur = 0;
     }
 
     get type() {
@@ -262,54 +378,181 @@ class Void {
     }
 }
 
+class Menu {
+    constructor(x, menuWidth) {
+        this.x = x
+        this.width = menuWidth
+        this.height = menuWidth*10
+    }
+
+    draw() {
+        strokeWeight(1)
+        stroke(255)
+        fill(255)
+
+        line(this.x, 0, this.x, this.height)
+
+        //                Texts
+        textAlign(CENTER)
+        strokeWeight(0)
+        textSize(this.width/4)
+
+        let heightUnit = this.height/30
+
+        // Layers
+        text("Layers", this.x, 23*heightUnit, this.width)
+        text(maxlayer + (maxlayer >= 4 ? " !" : ""), this.x, 24*heightUnit, this.width)
+
+        // Turn
+         text("Turn", this.x, heightUnit, this.width)
+        if(turn == ' ') {
+            textSize(this.width/2)
+            text("?", this.x, 2.5*heightUnit, this.width)
+        }
+
+        // Build Board
+        textSize(this.width/3)
+        text(gameRunning ? "Stop" : "Start", this.x, 27.4*heightUnit, this.width)
+
+        // Layers Buttons
+        let margin = this.width/20
+        let buttonSize = (this.width - 3*margin)/2
+        strokeWeight(this.width/50)
+        fill(0)
+
+        rect(this.x + margin               , 25*heightUnit, buttonSize, buttonSize, buttonSize/10)
+        line(this.x + 3*margin, 25*heightUnit + buttonSize/2, this.x - margin + buttonSize, 25*heightUnit + buttonSize/2)
+
+        rect(this.x + 2*margin + buttonSize, 25*heightUnit, buttonSize, buttonSize, buttonSize/10)
+        line(this.x + 4*margin + buttonSize, 25*heightUnit + buttonSize/2, this.x + 0*margin + 2*buttonSize, 25*heightUnit + buttonSize/2)
+        line(this.x + 2*margin + (3/2)*buttonSize, 25*heightUnit + 2*margin, this.x + 2*margin + (3/2)*buttonSize, 25*heightUnit + buttonSize - 2*margin )
+
+        // Turn Symbol
+        let turnSize = this.width - 2*margin
+        if(turn != ' ') {
+            let pX = this.x + margin
+            let pY = 2*heightUnit
+            let p
+            if (turn == 'X')
+                p = new X_Piece(pX, pY, turnSize)
+            else if (turn == 'O')
+                p = new O_Piece(pX, pY, turnSize)
+            p.draw()
+        }
+
+        // Build Board Button
+        strokeWeight(this.width/50)
+        stroke(255)
+        noFill()
+        rect(this.x + margin, 27*heightUnit, turnSize, 0.7*turnSize, turnSize/7)
+
+        
+    }
+
+    insideRect(rX, rY, rWidth, rHeight, pX, pY) {
+        if(pX >= rX && pX <= rX + rWidth && pY >= rY && pY <= rY + rHeight) return true
+        return false
+    }
+
+    processMousePress(mX, mY) {
+        let heightUnit = this.height/30
+        let margin = this.width/20
+        let buttonSize = (this.width - 3*margin)/2
+        let turnSize = this.width - 2*margin
+
+        if (this.insideRect(this.x + margin, 25*heightUnit, buttonSize, buttonSize, mX, mY))
+            updateBoardSize(-1)
+        else if (this.insideRect(this.x + 2*margin + buttonSize, 25*heightUnit, buttonSize, buttonSize, mX, mY))
+            updateBoardSize(1)
+        else if (this.insideRect(this.x + margin, 27*heightUnit, turnSize, 0.7*turnSize, mX, mY)) {
+            if(!gameRunning)
+                startGame()
+            else
+                stopGame()
+        }
+    }
+}
+
 var tab
 var maxlayer
 var turn
+var menu
+var gameRunning
+var xVictories
+var oVictories
+var nTies
 
 function setup() {
-    createCanvas(650, 600)
+    let screenSize = 1000
+    createCanvas(Math.floor(screenSize*1.1), screenSize)
 
     maxlayer = 0
     tab = Board.create()
+    menu = new Menu(screenSize, Math.floor(screenSize*0.1))
 
-    turn = 'X'
+    turn = ' '
+    gameRunning = false
+    xVictories = oVictories = nTies = 0
 }
 
 function draw() {
     background(0)
-    
-    stroke(255)
-    strokeWeight(1)
-    noFill()
-    rect(0, 0, 600, 600)
-    tab.drawRectriction()
+
+    if(gameRunning)
+        tab.drawHover()
     tab.draw()
+    
+    menu.draw()
+
 }
 
 function updateBoardSize(increment) {
     maxlayer += increment
-    if (maxlayer < 0) maxlayer = 0
-
-    tab = Board.create()
+    if(maxlayer < 0) maxlayer = 0
+    if(!gameRunning)
+        tab = Board.create()
 }
 
-function mousePressed() {
-    if(mouseX > 600) {
-        if(mouseButton == LEFT)
-            updateBoardSize(1)
-        else
-            updateBoardSize(-1)
-    }
-    else {
+function startGame() {
+    tab = Board.create()
+    turn = random(['X', 'O'])
+    gameRunning = true
+}
+
+function stopGame() {
+    turn = ' '
+    gameRunning = false
+}
+
+function gameOver(end) {
+    if(end == 'X')
+        xVictories++
+    else if(end == 'O')
+        oVictories++
+    else
+        nTies++
+    stopGame()
+}
+
+function mouseReleased() {
+    
+    if(mouseX < height && gameRunning)
         tab.processMousePress(mouseX, mouseY)
-    }
+    else 
+        menu.processMousePress(mouseX, mouseY)
 
     return false
 }
 
+
 function passTurn() {
-    if(turn == 'X')
+    if(!gameRunning)
+        turn = ' '
+    else if(turn == 'X')
         turn = 'O'
     else
         turn = 'X'
+    
+    if(!tab.hasPlay())
+        gameOver(' ')
 }
