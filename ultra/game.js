@@ -400,19 +400,19 @@ class Menu {
         let heightUnit = this.height/30
 
         // Layers
-        text("Layers", this.x, 23*heightUnit, this.width)
-        text(maxlayer + (maxlayer >= 4 ? " !" : ""), this.x, 24*heightUnit, this.width)
+        text("Layers", this.x, 23*heightUnit - 39, this.width)
+        text(maxlayer + (maxlayer >= 4 ? " !" : ""), this.x, 24*heightUnit - 39, this.width)
 
         // Turn
-         text("Turn", this.x, heightUnit, this.width)
+        text("Turn", this.x, heightUnit + 83, this.width)
         if(turn == ' ') {
             textSize(this.width/2)
-            text("?", this.x, 2.5*heightUnit, this.width)
+            text("?", this.x, 2.5*heightUnit + 83, this.width)
         }
 
         // Build Board
         textSize(this.width/3)
-        text(gameRunning ? "Stop" : "Start", this.x, 27.4*heightUnit, this.width)
+        text(gameRunning ? "Stop" : "Start", this.x, 27.4*heightUnit - 39, this.width)
 
         // Layers Buttons
         let margin = this.width/20
@@ -420,18 +420,18 @@ class Menu {
         strokeWeight(this.width/50)
         fill(0)
 
-        rect(this.x + margin               , 25*heightUnit, buttonSize, buttonSize, buttonSize/10)
-        line(this.x + 3*margin, 25*heightUnit + buttonSize/2, this.x - margin + buttonSize, 25*heightUnit + buttonSize/2)
+        rect(this.x + margin               , 25*heightUnit - 39, buttonSize, buttonSize, buttonSize/10)
+        line(this.x + 3*margin, 25*heightUnit + buttonSize/2 - 39, this.x - margin + buttonSize, 25*heightUnit + buttonSize/2 - 39)
 
-        rect(this.x + 2*margin + buttonSize, 25*heightUnit, buttonSize, buttonSize, buttonSize/10)
-        line(this.x + 4*margin + buttonSize, 25*heightUnit + buttonSize/2, this.x + 0*margin + 2*buttonSize, 25*heightUnit + buttonSize/2)
-        line(this.x + 2*margin + (3/2)*buttonSize, 25*heightUnit + 2*margin, this.x + 2*margin + (3/2)*buttonSize, 25*heightUnit + buttonSize - 2*margin )
+        rect(this.x + 2*margin + buttonSize, 25*heightUnit - 39, buttonSize, buttonSize, buttonSize/10)
+        line(this.x + 4*margin + buttonSize, 25*heightUnit + buttonSize/2 - 39, this.x + 0*margin + 2*buttonSize, 25*heightUnit + buttonSize/2 - 39)
+        line(this.x + 2*margin + (3/2)*buttonSize, 25*heightUnit + 2*margin - 39, this.x + 2*margin + (3/2)*buttonSize, 25*heightUnit + buttonSize - 2*margin - 39)
 
         // Turn Symbol
         let turnSize = this.width - 2*margin
         if(turn != ' ') {
             let pX = this.x + margin
-            let pY = 2*heightUnit
+            let pY = 2*heightUnit + 83
             let p
             if (turn == 'X')
                 p = new X_Piece(pX, pY, turnSize)
@@ -444,9 +444,32 @@ class Menu {
         strokeWeight(this.width/50)
         stroke(255)
         noFill()
-        rect(this.x + margin, 27*heightUnit, turnSize, 0.7*turnSize, turnSize/7)
+        rect(this.x + margin, 27*heightUnit - 39, turnSize, 0.7*turnSize, turnSize/7)
 
+        // Scores
+        strokeWeight(0)
+        fill(255)
+
+        text("Score", this.x, 10*heightUnit + 61, this.width)
+
+        let p = new X_Piece(this.x + margin, 11*heightUnit + 61, 0.6*this.width)
+        p.draw()
+
+        p = new O_Piece(this.x + margin, 13*heightUnit + 61, 0.6*this.width)
+        p.draw()
+
+        textSize(this.width/4)
+        strokeWeight(0)
+        fill(255)
+        textAlign(LEFT, TOP)
+
+        text("Tie", this.x + 3.7*margin, 15.55*heightUnit + 61)
         
+        textSize(this.width/3)
+        text(xVictories, this.x + 5*margin + this.width/2, 11.5*heightUnit + 61)
+        text(oVictories, this.x + 5*margin + this.width/2, 13.5*heightUnit + 61)
+        text(nTies,      this.x + 5*margin + this.width/2, 15.5*heightUnit + 61)
+
     }
 
     insideRect(rX, rY, rWidth, rHeight, pX, pY) {
@@ -460,11 +483,11 @@ class Menu {
         let buttonSize = (this.width - 3*margin)/2
         let turnSize = this.width - 2*margin
 
-        if (this.insideRect(this.x + margin, 25*heightUnit, buttonSize, buttonSize, mX, mY))
+        if (this.insideRect(this.x + margin, 25*heightUnit - 39, buttonSize, buttonSize, mX, mY))
             updateBoardSize(-1)
-        else if (this.insideRect(this.x + 2*margin + buttonSize, 25*heightUnit, buttonSize, buttonSize, mX, mY))
+        else if (this.insideRect(this.x + 2*margin + buttonSize, 25*heightUnit - 39, buttonSize, buttonSize, mX, mY))
             updateBoardSize(1)
-        else if (this.insideRect(this.x + margin, 27*heightUnit, turnSize, 0.7*turnSize, mX, mY)) {
+        else if (this.insideRect(this.x + margin, 27*heightUnit - 39, turnSize, 0.7*turnSize, mX, mY)) {
             if(!gameRunning)
                 startGame()
             else
@@ -503,7 +526,6 @@ function draw() {
     tab.draw()
     
     menu.draw()
-
 }
 
 function updateBoardSize(increment) {
@@ -547,8 +569,9 @@ function mouseReleased() {
 
 function passTurn() {
     if(!gameRunning)
-        turn = ' '
-    else if(turn == 'X')
+        return
+    
+    if(turn == 'X')
         turn = 'O'
     else
         turn = 'X'
