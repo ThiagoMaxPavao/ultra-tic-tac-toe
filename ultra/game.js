@@ -18,7 +18,9 @@ class Board {
     }
 
     static create() {
-        return new Board(0,0 , height, 0, undefined, undefined)
+        let b = new Board(0,0 , height, 0, undefined, undefined)
+        b.draw()
+        return  b
     }
 
     get type() {
@@ -74,20 +76,22 @@ class Board {
     }
 
     draw(restrictOverride) {
-        if(this.layer == 0)
-            stroke(212,175,55)
+        if(this.layer == 0) {
+            gsb.clear()
+            gsb.stroke(212,175,55)
+        }
         else if(restrictOverride || !this.hasPlay())
-            stroke(100)
+            gsb.stroke(100)
         else
-            stroke(255)
+            gsb.stroke(255)
         let w = this.size/60
-        strokeWeight(w)
+        gsb.strokeWeight(w)
 
         let margin = 2*w
         for(let i = 1; i < 3; i++) {
             let d = margin + (i/3) * (this.size - 2*margin)
-            line(this.x+d       , this.y+margin, this.x+d               , this.y+this.size-margin)
-            line(this.x  +margin, this.y+d     , this.x+this.size-margin, this.y+d               )
+            gsb.line(this.x+d       , this.y+margin, this.x+d               , this.y+this.size-margin)
+            gsb.line(this.x  +margin, this.y+d     , this.x+this.size-margin, this.y+d               )
         }
 
         for(let x = 0; x < 3; x++)
@@ -101,6 +105,12 @@ class Board {
             if(type != 'V')
                 this.t[3*y+x].draw(restrictOverrideChild)
         }
+    }
+
+    drawWinPieces() {
+        for(let i = 0; i < 9; i++) 
+            if((this.t[i].type == 'X' || this.t[i].type == 'O') && this.t[i].winPiece) 
+                this.t[i].draw()
     }
 
     createInnerBoards() {
@@ -164,9 +174,9 @@ class Board {
 
         let p
         if (type == 'X')
-            p = new X_Piece(pX, pY, innerSize)
+            p = new X_Piece(pX, pY, innerSize, true)
         else if (type == 'O')
-            p = new O_Piece(pX, pY, innerSize)
+            p = new O_Piece(pX, pY, innerSize, true)
         
         this.t[3*y+x] = p
 
@@ -294,17 +304,18 @@ class Board {
 }
 
 class Piece {
-    constructor(x,y, size) {
+    constructor(x,y, size, inBoard) {
         this.x = x
         this.y = y
         this.size = size
         this.winPiece = false
+        this.inBoard = inBoard
     }
 }
 
 class X_Piece extends Piece {
-    constructor(x,y, size) {
-        super(x,y, size)
+    constructor(x,y, size, inBoard) {
+        super(x,y, size, inBoard)
         this.w = this.size/10
         let margin = 2*this.w
         this.x1 = this.x + margin
@@ -314,23 +325,42 @@ class X_Piece extends Piece {
     }
 
     draw() {
-        let c = color(255,0,0)
-        stroke(c)
-        fill(c)
-        strokeWeight(this.w)
-        if(this.winPiece) {
-            drawingContext.shadowBlur = 70;
-            drawingContext.shadowColor = color(255,0,0);
+        if(this.inBoard) {
+            let c = color(255,0,0)
+            gsb.stroke(c)
+            gsb.fill(c)
+            gsb.strokeWeight(this.w)
+            if(this.winPiece) {
+                drawingContext.shadowBlur = 70;
+                drawingContext.shadowColor = color(255,0,0);
+                stroke(c)
+                fill(c)
+                strokeWeight(this.w)
+                line(this.x1,this.y1, this.x2,this.y2)
+                line(this.x1,this.y2, this.x2,this.y1)
+                line(this.x1,this.y1, this.x2,this.y2)
+                line(this.x1,this.y2, this.x2,this.y1)
+            }
+    
+            gsb.line(this.x1,this.y1, this.x2,this.y2)
+            gsb.line(this.x1,this.y2, this.x2,this.y1)
+            if(this.size < 7)
+                gsb.rect(this.x+this.w, this.y+this.w, this.size-2*this.w)
+    
+            drawingContext.shadowBlur = 0;
+
+        }
+        else {
+            let c = color(255,0,0)
+            stroke(c)
+            fill(c)
+            strokeWeight(this.w)
+    
             line(this.x1,this.y1, this.x2,this.y2)
             line(this.x1,this.y2, this.x2,this.y1)
+            if(this.size < 7)
+                rect(this.x+this.w, this.y+this.w, this.size-2*this.w)
         }
-
-        line(this.x1,this.y1, this.x2,this.y2)
-        line(this.x1,this.y2, this.x2,this.y1)
-        if(this.size < 7)
-            rect(this.x+this.w, this.y+this.w, this.size-2*this.w)
-
-        drawingContext.shadowBlur = 0;
     }
 
     get type() {
@@ -339,8 +369,8 @@ class X_Piece extends Piece {
 }
 
 class O_Piece extends Piece {
-    constructor(x,y, size) {
-        super(x,y, size)
+    constructor(x,y, size, inBoard) {
+        super(x,y, size, inBoard)
         this.w = this.size/10
         this.d = this.size - 4*this.w
         this.xC = this.x + this.size/2
@@ -348,23 +378,42 @@ class O_Piece extends Piece {
     }
 
     draw() {
-        stroke(0,0,255)
-        noFill()
-        strokeWeight(this.w)
-        if(this.winPiece) {
-            drawingContext.shadowBlur = 70;
-            drawingContext.shadowColor = color(0,0,255);
+        if(this.inBoard) {
+            gsb.stroke(0,0,255)
+            gsb.noFill()
+            gsb.strokeWeight(this.w)
+            if(this.winPiece) {
+                drawingContext.shadowBlur = 70;
+                drawingContext.shadowColor = color(0,0,255);
+                stroke(0,0,255)
+                noFill()
+                strokeWeight(this.w)
+                circle(this.xC, this.yC, this.d)
+                circle(this.xC, this.yC, this.d)
+            }
+    
+            gsb.circle(this.xC, this.yC, this.d)
+            
+            if(this.size < 7) {
+                gsb.fill(0,0,255)
+                gsb.rect(this.x+this.w, this.y+this.w, this.size-2*this.w)
+            }
+    
+            drawingContext.shadowBlur = 0;
+            
+        }
+        else {
+            stroke(0,0,255)
+            noFill()
+            strokeWeight(this.w)
+    
             circle(this.xC, this.yC, this.d)
+            
+            if(this.size < 7) {
+                fill(0,0,255)
+                rect(this.x+this.w, this.y+this.w, this.size-2*this.w)
+            }
         }
-
-        circle(this.xC, this.yC, this.d)
-        
-        if(this.size < 7) {
-            fill(0,0,255)
-            rect(this.x+this.w, this.y+this.w, this.size-2*this.w)
-        }
-
-        drawingContext.shadowBlur = 0;
     }
 
     get type() {
@@ -504,10 +553,12 @@ var gameRunning
 var xVictories
 var oVictories
 var nTies
+var gsb
 
 function setup() {
     let screenSize = 1000
     createCanvas(Math.floor(screenSize*1.1), screenSize)
+    gsb = createGraphics(screenSize, screenSize);
 
     maxlayer = 0
     tab = Board.create()
@@ -523,7 +574,9 @@ function draw() {
 
     if(gameRunning)
         tab.drawHover()
-    tab.draw()
+    else
+        tab.drawWinPieces()
+    image(gsb, 0,0)
     
     menu.draw()
 }
@@ -568,6 +621,7 @@ function mouseReleased() {
 
 
 function passTurn() {
+    tab.draw()
     if(!gameRunning)
         return
     
