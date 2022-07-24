@@ -641,7 +641,6 @@ function passTurn() {
 //     noFill()
 //     strokeWeight(350)
 
-    
 //     let v = color(255,0,0)
 //     let b = color(0,0,255)
 //     let margin = 350
