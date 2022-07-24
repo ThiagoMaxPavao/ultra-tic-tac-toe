@@ -633,3 +633,31 @@ function passTurn() {
     if(!tab.hasPlay())
         gameOver(' ')
 }
+
+// ICON GENERATION
+// function setup() {
+//     createCanvas(3000, 3000)
+//     drawingContext.shadowBlur = 450;
+//     noFill()
+//     strokeWeight(350)
+
+    
+//     let v = color(255,0,0)
+//     let b = color(0,0,255)
+//     let margin = 350
+
+//     stroke(v)
+//     drawingContext.shadowColor = v;
+//     line(margin, margin, 3000-margin, 3000-margin)
+//     line(margin, margin, 3000-margin, 3000-margin)
+    
+//     stroke(b)
+//     drawingContext.shadowColor = b;
+//     circle(1500,1500, 3000-2*margin)
+//     circle(1500,1500, 3000-2*margin)
+    
+//     stroke(v)
+//     drawingContext.shadowColor = v;
+//     line(margin, 3000-margin, 3000-margin, margin)
+//     line(margin, 3000-margin, 3000-margin, margin)
+// }
