@@ -303,6 +303,36 @@ class Board {
 
         return false
     }
+    
+    generateOptions() {
+        let options = []
+        for(let i = 0; i < 9; i++) {
+            if(this.restrict != -1 && this.restrict != i) continue
+            if(this.t[i].type == 'V') options.push(str(i))
+            else if(this.t[i].type == 'B') {
+                let childOptions = this.t[i].generateOptions()
+                for(let j = 0; j < childOptions.length; j++) {
+                    let aux = ""
+                    aux += i
+                    aux += childOptions[j]
+                    options.push(aux)
+                }
+            }
+        }
+        return options
+    }
+
+    putPiecebyAdress(adress) {
+        let pos = adress[0]
+        if(adress.length == 1) {
+            let x = pos%3
+            let y = Math.floor(pos/3)
+            this.addPiece(game.turn, x, y)
+            game.passTurn()
+        }
+        else
+            this.t[pos].putPiecebyAdress(adress.slice(1))
+    }
 }
 
 class Piece {
@@ -466,6 +496,11 @@ class Menu {
         textSize(this.width/3)
         text(game.running ? "Stop" : "Start", this.x, 27.4*heightUnit - 39, this.width)
 
+        // Build Board
+        textAlign(LEFT, TOP)
+        textSize(this.width/5)
+        text("auto\nplay", this.x + 5, 29.5*heightUnit - 39, this.width)
+
         // Layers Buttons
         let margin = this.width/20
         let buttonSize = (this.width - 3*margin)/2
@@ -497,11 +532,24 @@ class Menu {
         stroke(255)
         noFill()
         rect(this.x + margin, 27*heightUnit - 39, turnSize, 0.7*turnSize, turnSize/7)
+        
+        // Random Mode Button
+        strokeWeight(this.width/50)
+        stroke(255)
+        noFill()
+        rect(this.x + margin + 43, 29*heightUnit - 20, 0.5*turnSize, 0.5*turnSize, turnSize/7)
+
+        strokeWeight(this.width/35)
+        if(game.randomMode)
+            line(this.x + margin + 43 + 0.25*turnSize, 29*heightUnit - 20 + 10, this.x + margin + 43 + 0.25*turnSize, 29*heightUnit - 20 + 0.5*turnSize - 10)
+        else
+            circle(this.x + margin + 43 + 0.25*turnSize, 29*heightUnit - 20 + 0.25*turnSize, 0.5*turnSize - 20)
 
         // Scores
         strokeWeight(0)
         fill(255)
 
+        textAlign(CENTER)
         text("Score", this.x, 10*heightUnit + 61, this.width)
 
         let p = new X_Piece(this.x + margin, 11*heightUnit + 61, 0.6*this.width)
@@ -517,11 +565,20 @@ class Menu {
 
         text("Tie", this.x + 3.7*margin, 15.55*heightUnit + 61)
         
-        textSize(this.width/3)
+        this.choseFontSize(game.xVictories)
         text(game.xVictories, this.x + 5*margin + this.width/2, 11.5*heightUnit + 61)
-        text(game.oVictories, this.x + 5*margin + this.width/2, 13.5*heightUnit + 61)
-        text(game.nTies,      this.x + 5*margin + this.width/2, 15.5*heightUnit + 61)
 
+        this.choseFontSize(game.oVictories)
+        text(game.oVictories, this.x + 5*margin + this.width/2, 13.5*heightUnit + 61)
+
+        this.choseFontSize(game.nTies)
+        text(game.nTies,      this.x + 5*margin + this.width/2, 15.5*heightUnit + 61)
+    }
+
+    choseFontSize(value) {
+        if(value < 10) textSize(this.width/3)
+        else if(value < 100) textSize(this.width/6)
+        else textSize(this.width/10)
     }
 
     insideRect(rX, rY, rWidth, rHeight, pX, pY) {
@@ -545,6 +602,8 @@ class Menu {
             else
                 game.stopGame()
         }
+        else if(this.insideRect(this.x + margin + 43, 29*heightUnit - 20, 0.5*turnSize, 0.5*turnSize, mX, mY))
+            game.toogleRandomMode()
     }
 }
 
@@ -562,6 +621,17 @@ class Game {
 
         this.gsb = createGraphics(screenSize, screenSize);
         this.createBoard()
+
+        this.randomMode = false
+    }
+
+    toogleRandomMode() {
+        this.randomMode = !this.randomMode
+    }
+
+    updateRandom() {
+        if(this.randomMode && this.running)
+            this.board.putPiecebyAdress(random(this.board.generateOptions()))
     }
 
     createBoard() {
@@ -636,7 +706,8 @@ function setup() {
 
 function draw() {
     background(0)
-    game.processMousePress(mouseX, mouseY)
+
+    game.updateRandom()
     game.draw()
     menu.draw()
 }
