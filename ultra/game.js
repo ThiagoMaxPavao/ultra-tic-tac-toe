@@ -1,24 +1,26 @@
 class Board {
-    constructor(x, y, size, layer, parent, pos) {
+    constructor(x, y, size, layer, maxLayer, parent, pos, gsb) {
         this.x = x
         this.y = y
         this.size = size
         this.layer = layer
+        this.maxLayer = maxLayer
         this.parent = parent
         this.pos = pos
+        this.gsb = gsb
 
         this._restrict = -1
         this.t = new Array(9)
         for(let i = 0; i < 9; i++)
             this.t[i] = new Void()
 
-        if(layer + 1 <= maxlayer) {
+        if(layer + 1 <= maxLayer) {
             this.createInnerBoards()
         }
     }
 
-    static create() {
-        let b = new Board(0,0 , height, 0, undefined, undefined)
+    static create(maxLayer, gsb) {
+        let b = new Board(0,0 , height, 0, maxLayer, undefined, undefined, gsb)
         b.draw()
         return  b
     }
@@ -53,9 +55,9 @@ class Board {
         let pY = this.y+margin + (innerSize+w)*hY
 
         let p
-        if (turn == 'X')
+        if (game.turn == 'X')
             p = new X_Piece(pX, pY, innerSize)
-        else if (turn == 'O')
+        else if (game.turn == 'O')
             p = new O_Piece(pX, pY, innerSize)
         
         p.draw()
@@ -77,21 +79,21 @@ class Board {
 
     draw(restrictOverride) {
         if(this.layer == 0) {
-            gsb.clear()
-            gsb.stroke(212,175,55)
+            this.gsb.clear()
+            this.gsb.stroke(212,175,55)
         }
         else if(restrictOverride || !this.hasPlay())
-            gsb.stroke(100)
+            this.gsb.stroke(100)
         else
-            gsb.stroke(255)
+            this.gsb.stroke(255)
         let w = this.size/60
-        gsb.strokeWeight(w)
+        this.gsb.strokeWeight(w)
 
         let margin = 2*w
         for(let i = 1; i < 3; i++) {
             let d = margin + (i/3) * (this.size - 2*margin)
-            gsb.line(this.x+d       , this.y+margin, this.x+d               , this.y+this.size-margin)
-            gsb.line(this.x  +margin, this.y+d     , this.x+this.size-margin, this.y+d               )
+            this.gsb.line(this.x+d       , this.y+margin, this.x+d               , this.y+this.size-margin)
+            this.gsb.line(this.x  +margin, this.y+d     , this.x+this.size-margin, this.y+d               )
         }
 
         for(let x = 0; x < 3; x++)
@@ -123,7 +125,7 @@ class Board {
             let bX = this.x+margin + (innerSize+w)*x 
             let bY = this.y+margin + (innerSize+w)*y
 
-            this.t[3*y+x] = new Board(bX, bY, innerSize, this.layer+1, this, 3*y+x)
+            this.t[3*y+x] = new Board(bX, bY, innerSize, this.layer+1, this.maxLayer, this, 3*y+x, this.gsb)
         }
     }
 
@@ -174,9 +176,9 @@ class Board {
 
         let p
         if (type == 'X')
-            p = new X_Piece(pX, pY, innerSize, true)
+            p = new X_Piece(pX, pY, innerSize, true, this.gsb)
         else if (type == 'O')
-            p = new O_Piece(pX, pY, innerSize, true)
+            p = new O_Piece(pX, pY, innerSize, true, this.gsb)
         
         this.t[3*y+x] = p
 
@@ -184,7 +186,7 @@ class Board {
         if(c != -1) { // board is completed
             if(this.layer == 0) { // case main board is completed, game over
                 this.setWinPieces(c)
-                gameOver(c)
+                game.gameOver(c)
             }
             else
                 this.parent.addPiece(c, this.pos%3, Math.floor(this.pos/3))
@@ -244,8 +246,8 @@ class Board {
         if(this.restrict != -1 && this.restrict != pos) return // invalid position to play
 
         if(this.t[pos].type == 'V') {
-            this.addPiece(turn, x, y)
-            passTurn()
+            this.addPiece(game.turn, x, y)
+            game.passTurn()
             return
         }
 
@@ -304,18 +306,19 @@ class Board {
 }
 
 class Piece {
-    constructor(x,y, size, inBoard) {
+    constructor(x,y, size, inBoard, gsb) {
         this.x = x
         this.y = y
         this.size = size
         this.winPiece = false
         this.inBoard = inBoard
+        this.gsb = gsb
     }
 }
 
 class X_Piece extends Piece {
-    constructor(x,y, size, inBoard) {
-        super(x,y, size, inBoard)
+    constructor(x,y, size, inBoard, gsb) {
+        super(x,y, size, inBoard, gsb)
         this.w = this.size/10
         let margin = 2*this.w
         this.x1 = this.x + margin
@@ -327,9 +330,9 @@ class X_Piece extends Piece {
     draw() {
         if(this.inBoard) {
             let c = color(255,0,0)
-            gsb.stroke(c)
-            gsb.fill(c)
-            gsb.strokeWeight(this.w)
+            this.gsb.stroke(c)
+            this.gsb.fill(c)
+            this.gsb.strokeWeight(this.w)
             if(this.winPiece) {
                 drawingContext.shadowBlur = 70;
                 drawingContext.shadowColor = color(255,0,0);
@@ -342,10 +345,10 @@ class X_Piece extends Piece {
                 line(this.x1,this.y2, this.x2,this.y1)
             }
     
-            gsb.line(this.x1,this.y1, this.x2,this.y2)
-            gsb.line(this.x1,this.y2, this.x2,this.y1)
+            this.gsb.line(this.x1,this.y1, this.x2,this.y2)
+            this.gsb.line(this.x1,this.y2, this.x2,this.y1)
             if(this.size < 7)
-                gsb.rect(this.x+this.w, this.y+this.w, this.size-2*this.w)
+                this.gsb.rect(this.x+this.w, this.y+this.w, this.size-2*this.w)
     
             drawingContext.shadowBlur = 0;
 
@@ -369,8 +372,8 @@ class X_Piece extends Piece {
 }
 
 class O_Piece extends Piece {
-    constructor(x,y, size, inBoard) {
-        super(x,y, size, inBoard)
+    constructor(x,y, size, inBoard, gsb) {
+        super(x,y, size, inBoard, gsb)
         this.w = this.size/10
         this.d = this.size - 4*this.w
         this.xC = this.x + this.size/2
@@ -379,9 +382,9 @@ class O_Piece extends Piece {
 
     draw() {
         if(this.inBoard) {
-            gsb.stroke(0,0,255)
-            gsb.noFill()
-            gsb.strokeWeight(this.w)
+            this.gsb.stroke(0,0,255)
+            this.gsb.noFill()
+            this.gsb.strokeWeight(this.w)
             if(this.winPiece) {
                 drawingContext.shadowBlur = 70;
                 drawingContext.shadowColor = color(0,0,255);
@@ -392,11 +395,11 @@ class O_Piece extends Piece {
                 circle(this.xC, this.yC, this.d)
             }
     
-            gsb.circle(this.xC, this.yC, this.d)
+            this.gsb.circle(this.xC, this.yC, this.d)
             
             if(this.size < 7) {
-                gsb.fill(0,0,255)
-                gsb.rect(this.x+this.w, this.y+this.w, this.size-2*this.w)
+                this.gsb.fill(0,0,255)
+                this.gsb.rect(this.x+this.w, this.y+this.w, this.size-2*this.w)
             }
     
             drawingContext.shadowBlur = 0;
@@ -450,18 +453,18 @@ class Menu {
 
         // Layers
         text("Layers", this.x, 23*heightUnit - 39, this.width)
-        text(maxlayer + (maxlayer >= 4 ? " !" : ""), this.x, 24*heightUnit - 39, this.width)
+        text(game.maxLayer + (game.maxLayer >= 4 ? " !" : ""), this.x, 24*heightUnit - 39, this.width)
 
         // Turn
         text("Turn", this.x, heightUnit + 83, this.width)
-        if(turn == ' ') {
+        if(game.turn == ' ') {
             textSize(this.width/2)
             text("?", this.x, 2.5*heightUnit + 83, this.width)
         }
 
         // Build Board
         textSize(this.width/3)
-        text(gameRunning ? "Stop" : "Start", this.x, 27.4*heightUnit - 39, this.width)
+        text(game.running ? "Stop" : "Start", this.x, 27.4*heightUnit - 39, this.width)
 
         // Layers Buttons
         let margin = this.width/20
@@ -478,13 +481,13 @@ class Menu {
 
         // Turn Symbol
         let turnSize = this.width - 2*margin
-        if(turn != ' ') {
+        if(game.turn != ' ') {
             let pX = this.x + margin
             let pY = 2*heightUnit + 83
             let p
-            if (turn == 'X')
+            if (game.turn == 'X')
                 p = new X_Piece(pX, pY, turnSize)
-            else if (turn == 'O')
+            else if (game.turn == 'O')
                 p = new O_Piece(pX, pY, turnSize)
             p.draw()
         }
@@ -515,9 +518,9 @@ class Menu {
         text("Tie", this.x + 3.7*margin, 15.55*heightUnit + 61)
         
         textSize(this.width/3)
-        text(xVictories, this.x + 5*margin + this.width/2, 11.5*heightUnit + 61)
-        text(oVictories, this.x + 5*margin + this.width/2, 13.5*heightUnit + 61)
-        text(nTies,      this.x + 5*margin + this.width/2, 15.5*heightUnit + 61)
+        text(game.xVictories, this.x + 5*margin + this.width/2, 11.5*heightUnit + 61)
+        text(game.oVictories, this.x + 5*margin + this.width/2, 13.5*heightUnit + 61)
+        text(game.nTies,      this.x + 5*margin + this.width/2, 15.5*heightUnit + 61)
 
     }
 
@@ -533,105 +536,118 @@ class Menu {
         let turnSize = this.width - 2*margin
 
         if (this.insideRect(this.x + margin, 25*heightUnit - 39, buttonSize, buttonSize, mX, mY))
-            updateBoardSize(-1)
+            game.updateBoardSize(-1)
         else if (this.insideRect(this.x + 2*margin + buttonSize, 25*heightUnit - 39, buttonSize, buttonSize, mX, mY))
-            updateBoardSize(1)
+            game.updateBoardSize(1)
         else if (this.insideRect(this.x + margin, 27*heightUnit - 39, turnSize, 0.7*turnSize, mX, mY)) {
-            if(!gameRunning)
-                startGame()
+            if(!game.running)
+                game.startGame()
             else
-                stopGame()
+                game.stopGame()
         }
     }
 }
 
-var tab
-var maxlayer
-var turn
+class Game {
+    constructor() {
+        createCanvas(Math.floor(screenSize*1.1), screenSize)
+
+        this.maxLayer = 0
+        this.turn = ' '
+        this.running = false
+
+        this.xVictories = 0
+        this.oVictories = 0
+        this.nTies = 0
+
+        this.gsb = createGraphics(screenSize, screenSize);
+        this.createBoard()
+    }
+
+    createBoard() {
+        this.board = Board.create(this.maxLayer, this.gsb)
+    }
+    
+    draw() {
+        if(this.running && mouseX < height)
+            this.board.drawHover()
+        if(!this.running)
+            this.board.drawWinPieces()
+        image(this.gsb, 0,0)
+    }
+
+    updateBoardSize(increment) {
+        this.maxLayer += increment
+        if(this.maxLayer < 0) this.maxLayer = 0
+        if(!this.running)
+            this.createBoard()
+    }
+    
+    startGame() {
+        this.createBoard()
+        this.turn = random(['X', 'O'])
+        this.running = true
+    }
+    
+    stopGame() {
+        this.turn = ' '
+        this.running = false
+    }
+    
+    gameOver(end) {
+        if(end == 'X')
+            this.xVictories++
+        else if(end == 'O')
+            this.oVictories++
+        else
+            this.nTies++
+        this.stopGame()
+    }
+
+    passTurn() {
+        this.board.draw() // Update gsb
+
+        if(!this.running)
+            return
+        
+        if(this.turn == 'X')
+            this.turn = 'O'
+        else
+            this.turn = 'X'
+        
+        if(!this.board.hasPlay())
+            this.gameOver(' ')
+    }
+
+    processMousePress(mX, mY) {
+        if(this.running)
+            this.board.processMousePress(mX, mY)
+    }
+}
+
+var screenSize = 1000
 var menu
-var gameRunning
-var xVictories
-var oVictories
-var nTies
-var gsb
+var game
 
 function setup() {
-    let screenSize = 1000
-    createCanvas(Math.floor(screenSize*1.1), screenSize)
-    gsb = createGraphics(screenSize, screenSize);
-
-    maxlayer = 0
-    tab = Board.create()
+    game = new Game()
     menu = new Menu(screenSize, Math.floor(screenSize*0.1))
-
-    turn = ' '
-    gameRunning = false
-    xVictories = oVictories = nTies = 0
 }
 
 function draw() {
     background(0)
-
-    if(gameRunning)
-        tab.drawHover()
-    else
-        tab.drawWinPieces()
-    image(gsb, 0,0)
-    
+    game.processMousePress(mouseX, mouseY)
+    game.draw()
     menu.draw()
 }
 
-function updateBoardSize(increment) {
-    maxlayer += increment
-    if(maxlayer < 0) maxlayer = 0
-    if(!gameRunning)
-        tab = Board.create()
-}
-
-function startGame() {
-    tab = Board.create()
-    turn = random(['X', 'O'])
-    gameRunning = true
-}
-
-function stopGame() {
-    turn = ' '
-    gameRunning = false
-}
-
-function gameOver(end) {
-    if(end == 'X')
-        xVictories++
-    else if(end == 'O')
-        oVictories++
-    else
-        nTies++
-    stopGame()
-}
-
 function mouseReleased() {
-    
-    if(mouseX < height && gameRunning)
-        tab.processMousePress(mouseX, mouseY)
+    if(mouseX < height)
+        game.processMousePress(mouseX, mouseY)
     else 
         menu.processMousePress(mouseX, mouseY)
 
     return false
-}
-
-
-function passTurn() {
-    tab.draw()
-    if(!gameRunning)
-        return
-    
-    if(turn == 'X')
-        turn = 'O'
-    else
-        turn = 'X'
-    
-    if(!tab.hasPlay())
-        gameOver(' ')
 }
 
 // ICON GENERATION
