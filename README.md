@@ -1,8 +1,8 @@
 # Ultra tic-tac-toe
 
-Este repositório contém um Jogo da velha diferenciado programado em *JavaScript*, a biblioteca [p5.js](https://p5js.org/), da fundação [Processing](https://processingfoundation.org/), foi essencial para construir o jogo. Esta biblioteca facilita o uso do *Canvas*, nativo do HTML para desenhar linhas, formas e textos.
+Este repositório contém um Jogo da velha diferenciado, programado em *JavaScript*. A biblioteca [p5.js](https://p5js.org/), da fundação [Processing](https://processingfoundation.org/), foi essencial para construir o jogo. Esta biblioteca facilita o uso do *Canvas*, nativo do HTML, e possibilita desenhar linhas, formas e textos com poucas linhas de código.
 
-## `Jogue sem download, no link`
+## Jogue sem download, no link
 
 <https://thiagomaxpavao.github.io/ultra-tic-tac-toe>
 
@@ -18,11 +18,11 @@ Com isso criamos um jogo conhecido como “Super jogo da velha”, o funcionamen
 
 Como é possível ver nos exemplos, após a jogada do *círculo*, a proxíma jogada deve ocorrer no pequeno jogo da velha na mesma posição em que a jogada foi feita, porém do tabuleiro principal. O local em que a jogada deve ser feita é sinalizada pelo programa, deixando o local branco, enquanto os outros tabuleiros são escurecidos.
 
-O jogo segue assim, quando um dos jogadores ganha em um dos pequenos jogos da velha, este deixa de existir e dá lugar ao simbolo do vencedor, o jogo termina quando um dos jogadores vence no tabuleiro principal, ou quando não há mais jogadas a serem feitas, neste caso é considerado empate.
+O jogo segue assim, quando um dos jogadores ganha em um dos pequenos jogos da velha, este deixa de existir e dá lugar ao simbolo do vencedor, o jogo termina quando um dos jogadores vence no tabuleiro principal, ou quando não há mais jogadas a serem feitas, neste caso é considerado velha.
 
 ![Exemplo de um jogo em andamento](imgs/jogoEmAndamento.png)
 
-Este funcionamento pode ser extendido, inserindo tabuleiros ainda menores dentro dos pequenos. Nem todas os casos de jogadas foram explicados aqui, mas certamente a melhor maneira de aprender é experimentando com o jogo.
+Este funcionamento pode ser extendido, inserindo tabuleiros ainda menores dentro dos pequenos. Muitos dos casos de jogadas que podem ocorrer em um jogo real não foram explicados aqui, mas certamente a melhor maneira de aprender é experimentando com o jogo.
 
 ## Auto Play
 
